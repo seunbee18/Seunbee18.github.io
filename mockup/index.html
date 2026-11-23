@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Katalog</title>
+<meta name="description" content="Katalog lagu pilihan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   TOKENS — cuma dua warna: hitam & cream
+   ========================================================= */
+:root{
+  --black:#0e0d0b;
+  --cream:#efe7d6;
+  --black-70:rgba(14,13,11,.7);
+  --black-45:rgba(14,13,11,.45);
+  --black-15:rgba(14,13,11,.15);
+  --cream-70:rgba(239,231,214,.7);
+  --cream-20:rgba(239,231,214,.2);
+
+  --display:"Archivo","Arial Narrow",sans-serif;
+  --body:"Newsreader",Georgia,serif;
+
+  --wrap:1240px;
+  --gutter:clamp(20px,4vw,48px);
+  --bar-h:76px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--cream);color:var(--black);
+  font-family:var(--body);font-size:1.125rem;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:var(--bar-h);
+}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit}
+svg{display:block}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--gutter)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.display{font-family:var(--display);font-stretch:62%;font-weight:800;line-height:.86;letter-spacing:-.005em;margin:0}
+.ui{font-family:var(--display);font-stretch:100%}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+.site-header{border-bottom:1.5px solid var(--black)}
+.site-header .wrap{display:flex;justify-content:space-between;align-items:center;height:64px}
+.brand{font-family:var(--display);font-stretch:62%;font-weight:800;font-size:1.7rem;text-decoration:none}
+.header-meta{font-family:var(--display);font-size:.95rem;color:var(--black-70);display:flex;gap:24px}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+.hero{padding:clamp(40px,6vw,80px) 0 clamp(48px,7vw,96px);overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,5vw,80px);align-items:end}
+.hero h1{font-size:clamp(5rem,16vw,13.5rem)}
+.hero-lede{max-width:40ch;margin:24px 0 0;font-size:clamp(1.15rem,1.5vw,1.3rem);color:var(--black-70)}
+.stats{display:flex;flex-wrap:wrap;gap:12px 40px;margin:36px 0 0;padding:0;list-style:none}
+.stats li{font-family:var(--display);font-size:.95rem;color:var(--black-70)}
+.stats b{display:block;font-stretch:62%;font-weight:800;font-size:2.6rem;line-height:1;color:var(--black)}
+
+.featured{justify-self:start;width:min(74%,400px)}
+.featured-caption{margin-top:18px;font-family:var(--display)}
+.featured-caption span{display:block;font-size:.9rem;color:var(--black-70)}
+.featured-caption b{font-size:1.15rem;font-weight:700}
+
+/* =========================================================
+   SLEEVE + DISC (dipakai di grid, hero, dialog)
+   ========================================================= */
+.sleeve{position:relative;aspect-ratio:1}
+.disc{
+  position:absolute;inset:3%;border-radius:50%;
+  background:
+    radial-gradient(circle, var(--cream) 0 6%, var(--black) 6.5% 17%, transparent 17.5%),
+    repeating-radial-gradient(circle, #1b1a17 0 2px, var(--black) 2px 4px);
+  transition:transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.disc::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 20deg, transparent 0 14%, rgba(239,231,214,.09) 18%, transparent 24% 60%, rgba(239,231,214,.07) 64%, transparent 70%);
+}
+.sleeve .cover{position:absolute;inset:0;z-index:1}
+.sleeve.is-out .disc{transform:translateX(38%)}
+.sleeve.is-spinning .disc::after{animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.featured .sleeve .disc{animation:peek 1.1s cubic-bezier(.2,.8,.2,1) .3s forwards}
+@keyframes peek{to{transform:translateX(38%)}}
+
+/* =========================================================
+   COVER (generatif, hitam/cream)
+   ========================================================= */
+.cover{
+  position:relative;aspect-ratio:1;
+  container-type:inline-size;overflow:hidden;
+  background:var(--bg);color:var(--fg);
+  --bg:var(--cream);--fg:var(--black);
+  box-shadow:inset 0 0 0 1.5px var(--black);
+}
+.cover.inv{--bg:var(--black);--fg:var(--cream)}
+.cover img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.05)}
+.cover svg{position:absolute;inset:0;width:100%;height:100%}
+.cover-text{position:absolute;inset:7%;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.cv-artist{font-family:var(--display);font-weight:600;font-size:5.2cqw;line-height:1.1}
+.cv-title{font-family:var(--display);font-stretch:62%;font-weight:800;font-size:10cqw;line-height:.9;max-width:80%}
+.cv-big{font-family:var(--display);font-stretch:62%;font-weight:800;line-height:.8;letter-spacing:-.01em}
+.cover.st-type .cv-title{font-size:24cqw;max-width:100%;overflow-wrap:anywhere}
+.cover.st-number .cv-big{font-size:58cqw}
+.cover.has-img .cover-text{display:none}
+.cover.st-horizon .cover-text{justify-content:flex-start;gap:2cqw}
+@container (max-width:90px){
+  .cv-artist{display:none}
+  .cover:not(.st-type):not(.st-number) .cv-title{display:none}
+  .cover.st-number .cv-big{font-size:70cqw}
+}
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+.catalog{padding:0 0 clamp(64px,9vw,120px)}
+.toolbar{
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px 28px;align-items:center;
+  padding:18px 0;border-top:1.5px solid var(--black);border-bottom:1.5px solid var(--black);
+  margin-bottom:clamp(28px,4vw,44px);
+}
+.toolbar h2{font-size:clamp(2.4rem,4vw,3.2rem)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font-family:var(--display);font-weight:500;font-size:.92rem;
+  padding:7px 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--black-15);
+}
+.chip:hover{box-shadow:inset 0 0 0 1.5px var(--black)}
+.chip[aria-pressed="true"]{background:var(--black);color:var(--cream);box-shadow:none}
+.tools-right{display:flex;gap:12px;align-items:center}
+.search{
+  width:200px;font-family:var(--display);font-size:.95rem;
+  padding:9px 14px;border-radius:999px;border:1.5px solid var(--black-15);background:transparent;
+}
+.search:focus{outline:none;border-color:var(--black)}
+.search::placeholder{color:var(--black-45)}
+.view-toggle{display:flex;border:1.5px solid var(--black);border-radius:999px;overflow:hidden}
+.view-toggle button{font-family:var(--display);font-weight:600;font-size:.9rem;padding:8px 14px}
+.view-toggle button[aria-pressed="true"]{background:var(--black);color:var(--cream)}
+
+/* =========================================================
+   GRID VIEW
+   ========================================================= */
+.grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(28px,3.5vw,48px) clamp(18px,2.4vw,32px)}
+.card-open{display:block;width:100%;text-align:left}
+.card .sleeve{width:86%}
+.card .disc{transform:translateX(9%)}
+.card .sleeve.is-out .disc{transform:translateX(16%)}
+.card-open:hover .cover{transform:translateY(-4px)}
+.card .cover{transition:transform .2s ease}
+.card-meta{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;margin-top:14px}
+.card-meta h3{margin:0;font-family:var(--display);font-stretch:75%;font-weight:700;font-size:1.2rem;line-height:1.15}
+.card-meta p{margin:2px 0 0;font-family:var(--display);font-size:.92rem;color:var(--black-70)}
+.card-cat{font-family:var(--display);font-size:.8rem;color:var(--black-45);font-variant-numeric:tabular-nums}
+
+.play-btn{
+  width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  box-shadow:inset 0 0 0 1.5px var(--black);
+}
+.play-btn svg{width:12px;height:12px}
+.play-btn:hover,.is-current .play-btn{background:var(--black);color:var(--cream)}
+.empty{display:none;padding:48px 0;font-family:var(--display);font-size:1.1rem;color:var(--black-70)}
+.empty.show{display:block}
+
+/* =========================================================
+   LIST VIEW
+   ========================================================= */
+.list{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--black)}
+.row{
+  display:grid;grid-template-columns:40px 56px minmax(0,2fr) minmax(0,1.4fr) 70px minmax(0,1fr) 56px 40px;
+  gap:18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--black-15);
+  font-family:var(--display);font-size:.95rem;
+}
+.row-head{color:var(--black-45);font-size:.85rem;padding:10px 0}
+.row .num{color:var(--black-45);font-variant-numeric:tabular-nums}
+.row .thumb{width:56px}
+.row-title{min-width:0}
+.row-title button{text-align:left;font-stretch:75%;font-weight:700;font-size:1.1rem;line-height:1.2}
+.row-title button:hover{text-decoration:underline;text-underline-offset:3px}
+.row-title span{display:block;color:var(--black-70)}
+.row .muted{color:var(--black-70);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .dur{font-variant-numeric:tabular-nums;color:var(--black-70)}
+.row.is-current .row-title button{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+[hidden]{display:none!important}
+
+/* =========================================================
+   DIALOG DETAIL
+   ========================================================= */
+dialog{
+  width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 32px);
+  padding:0;border:1.5px solid var(--black);background:var(--cream);color:var(--black);
+}
+dialog::backdrop{background:rgba(14,13,11,.72)}
+.dlg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,48px);padding:clamp(20px,3.5vw,40px)}
+.dlg .sleeve{width:78%}
+.dlg-info{display:flex;flex-direction:column;min-width:0}
+.dlg-close{
+  align-self:flex-end;font-family:var(--display);font-weight:600;font-size:.95rem;
+  padding:6px 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--black-15);
+}
+.dlg-close:hover{box-shadow:inset 0 0 0 1.5px var(--black)}
+.dlg-cat{margin-top:20px;font-family:var(--display);font-size:.9rem;color:var(--black-45)}
+.dlg h2{font-size:clamp(2.8rem,6vw,4.6rem);margin-top:8px}
+.dlg-artist{margin:10px 0 0;font-family:var(--display);font-weight:600;font-size:1.2rem}
+.dlg dl{margin:28px 0 0;border-top:1.5px solid var(--black)}
+.dlg dl div{display:grid;grid-template-columns:110px 1fr;padding:10px 0;border-bottom:1px solid var(--black-15);font-family:var(--display);font-size:.95rem}
+.dlg dt{color:var(--black-70)}
+.dlg dd{margin:0;font-weight:600}
+.dlg-note{margin:20px 0 0;color:var(--black-70)}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;padding-top:28px}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--display);font-weight:600;font-size:1rem;
+  padding:13px 22px;border-radius:999px;text-decoration:none;
+}
+.btn svg{width:13px;height:13px}
+.btn-solid{background:var(--black);color:var(--cream)}
+.btn-line{box-shadow:inset 0 0 0 1.5px var(--black)}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+.site-footer{border-top:1.5px solid var(--black);padding:24px 0 40px;font-family:var(--display);font-size:.92rem;color:var(--black-70)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+/* =========================================================
+   PLAYER BAR
+   ========================================================= */
+.player{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;height:var(--bar-h);
+  background:var(--black);color:var(--cream);
+}
+.player .wrap{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:24px;align-items:center}
+.np{display:flex;align-items:center;gap:14px;min-width:0}
+.np .thumb{width:48px;flex:none}
+.np .cover{box-shadow:inset 0 0 0 1px var(--cream-20)}
+.np-text{min-width:0;font-family:var(--display)}
+.np-title{font-weight:700;font-stretch:75%;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np-artist{font-size:.88rem;color:var(--cream-70);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{display:flex;flex-direction:column;align-items:center;gap:6px;width:min(44vw,520px)}
+.ctrl-row{display:flex;align-items:center;gap:18px}
+.ctrl{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:var(--cream-70)}
+.ctrl:hover{color:var(--cream)}
+.ctrl svg{width:14px;height:14px}
+.ctrl-main{width:42px;height:42px;background:var(--cream);color:var(--black)}
+.ctrl-main:hover{color:var(--black)}
+.ctrl-main .i-pause{display:none}
+body.is-playing .ctrl-main .i-play{display:none}
+body.is-playing .ctrl-main .i-pause{display:block}
+.seek-row{display:grid;grid-template-columns:40px 1fr 40px;gap:10px;align-items:center;width:100%;font-family:var(--display);font-size:.8rem;color:var(--cream-70);font-variant-numeric:tabular-nums}
+.seek-row span:last-child{text-align:right}
+.seek{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;margin:0;
+  background:linear-gradient(to right, var(--cream) var(--p,0%), var(--cream-20) var(--p,0%));
+}
+.seek::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--cream)}
+.seek::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--cream)}
+.seek:disabled::-webkit-slider-thumb{opacity:0}
+.seek:disabled::-moz-range-thumb{opacity:0}
+.vol{justify-self:end;display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:.88rem;color:var(--cream-70)}
+.vol input{width:110px;accent-color:var(--cream)}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width:1024px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .row{grid-template-columns:32px 48px minmax(0,2fr) minmax(0,1.4fr) 56px 40px}
+  .row .c-genre,.row .c-year{display:none}
+  .row .thumb{width:48px}
+}
+@media (max-width:820px){
+  .hero .wrap{grid-template-columns:1fr}
+  .featured{width:min(62vw,340px)}
+  .toolbar{grid-template-columns:1fr}
+  .tools-right{flex-wrap:wrap}
+  .search{flex:1;min-width:0;width:auto}
+  .dlg{grid-template-columns:1fr}
+  .dlg .sleeve{width:min(70%,320px)}
+  .player .wrap{grid-template-columns:minmax(0,1fr) auto}
+  .vol{display:none}
+  .controls{width:auto}
+  .seek-row{display:none}
+  .header-meta span:first-child{display:none}
+}
+@media (max-width:560px){
+  body{font-size:1.0625rem}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 16px}
+  .card-meta{grid-template-columns:1fr}
+  .card-meta .play-btn{display:none}
+  .row{grid-template-columns:48px minmax(0,1fr) 40px}
+  .row .num,.row .c-album,.row .dur{display:none}
+  .row-head{display:none}
+  .ctrl-row .ctrl:not(.ctrl-main){display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .disc,.card .cover{transition:none}
+  .featured .sleeve .disc{animation:none;transform:translateX(38%)}
+  .sleeve.is-spinning .disc::after{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#" id="brand"></a>
+    <div class="header-meta"><span id="headerVol"></span><a href="#katalog">Lihat katalog</a></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1 class="display" id="heroTitle"></h1>
+        <p class="hero-lede" id="heroLede"></p>
+        <ul class="stats" id="stats"></ul>
+      </div>
+      <div class="featured">
+        <button class="card-open" type="button" id="featuredBtn"></button>
+        <div class="featured-caption" id="featuredCaption"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog" id="katalog" aria-labelledby="katalog-h">
+    <div class="wrap">
+      <div class="toolbar">
+        <h2 class="display" id="katalog-h">Semua lagu</h2>
+        <div class="chips" id="chips" role="group"></div>
+        <div class="tools-right">
+          <label class="sr-only" for="search">Cari lagu atau artis</label>
+          <input class="search" id="search" type="search" placeholder="Cari lagu atau artis">
+          <div class="view-toggle" role="group" aria-label="Tampilan">
+            <button type="button" data-view="grid" aria-pressed="true">Sampul</button>
+            <button type="button" data-view="list" aria-pressed="false">Daftar</button>
+          </div>
+        </div>
+      </div>
+
+      <ul class="grid" id="grid"></ul>
+      <ol class="list" id="list" hidden></ol>
+      <p class="empty" id="empty">Tidak ada lagu yang cocok. Coba kata kunci lain atau pilih "Semua".</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><span id="footName"></span><span id="footCount"></span></div>
+</footer>
+
+<!-- DETAIL -->
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg">
+    <div id="dlgCover"></div>
+    <div class="dlg-info">
+      <button class="dlg-close" type="button" id="dlgClose">Tutup</button>
+      <span class="dlg-cat" id="dlgCat"></span>
+      <h2 class="display" id="dlgTitle"></h2>
+      <p class="dlg-artist" id="dlgArtist"></p>
+      <dl id="dlgMeta"></dl>
+      <p class="dlg-note" id="dlgNote"></p>
+      <div class="dlg-actions">
+        <button class="btn btn-solid" type="button" id="dlgPlay"></button>
+        <a class="btn btn-line" id="dlgLink" target="_blank" rel="noopener"></a>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- PLAYER -->
+<div class="player" role="region" aria-label="Pemutar">
+  <div class="wrap">
+    <div class="np">
+      <div class="thumb" id="npThumb"></div>
+      <div class="np-text">
+        <div class="np-title" id="npTitle"></div>
+        <div class="np-artist" id="npArtist"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-row">
+        <button class="ctrl" type="button" id="prevBtn" aria-label="Lagu sebelumnya">
+          <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1h2v12H2zM13 1v12L5 7z" fill="currentColor"/></svg>
+        </button>
+        <button class="ctrl ctrl-main" type="button" id="playBtn" aria-label="Putar">
+          <svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1l10 6-10 6z" fill="currentColor"/></svg>
+          <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1h3.5v12H2zM8.5 1H12v12H8.5z" fill="currentColor"/></svg>
+        </button>
+        <button class="ctrl" type="button" id="nextBtn" aria-label="Lagu berikutnya">
+          <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M10 1h2v12h-2zM1 1v12l8-6z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="seek-row">
+        <span id="tCur">0:00</span>
+        <input class="seek" id="seek" type="range" min="0" max="1000" value="0" aria-label="Posisi lagu">
+        <span id="tDur">0:00</span>
+      </div>
+    </div>
+    <label class="vol">Volume <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   DATA — ganti isi CONFIG.songs dengan list lagu kamu
+   ---------------------------------------------------------
+   title, artist, album, year, genre, duration  → teks biasa
+   cover  (opsional) → URL / path gambar sampul. Kosong = sampul dibuat otomatis
+   audio  (opsional) → URL / path file mp3. Kosong = diputar nada demo
+   feat   (opsional) → artis tamu
+   link   (opsional) → link Spotify / YouTube. Kosong = tombol "Cari di YouTube"
+   note   (opsional) → catatan singkat tentang lagu
+   style  (opsional) → 0–7, gaya sampul otomatis
+   ========================================================= */
+const CONFIG = {
+  name: "Katalog",
+  volume: "Vol. 1",
+  lede: "Lagu-lagu paling populer dari The Weeknd, Drake, dan Bruno Mars dalam satu rak. Klik sampul untuk membaca detailnya, atau langsung putar dari daftar.",
+  catPrefix: "KT",
+  featured: 0,          // indeks lagu yang tampil besar di atas
+  filterBy: "artist",   // "artist" atau "genre" — dasar tombol filter
+
+  songs: [
+    // The Weeknd
+    { title:"Blinding Lights", artist:"The Weeknd", album:"After Hours", year:2020, genre:"Synth-pop", duration:"3:20" },
+    { title:"Starboy", artist:"The Weeknd", feat:"Daft Punk", album:"Starboy", year:2016, genre:"R&B", duration:"3:50" },
+    { title:"Save Your Tears", artist:"The Weeknd", album:"After Hours", year:2020, genre:"Synth-pop", duration:"3:35" },
+    { title:"The Hills", artist:"The Weeknd", album:"Beauty Behind the Madness", year:2015, genre:"R&B", duration:"4:02" },
+    { title:"Can't Feel My Face", artist:"The Weeknd", album:"Beauty Behind the Madness", year:2015, genre:"Pop", duration:"3:33" },
+    { title:"Die for You", artist:"The Weeknd", album:"Starboy", year:2016, genre:"R&B", duration:"4:20" },
+    { title:"I Feel It Coming", artist:"The Weeknd", feat:"Daft Punk", album:"Starboy", year:2016, genre:"Pop", duration:"4:29" },
+    { title:"Earned It", artist:"The Weeknd", album:"Beauty Behind the Madness", year:2015, genre:"R&B", duration:"4:37" },
+    // Drake
+    { title:"God's Plan", artist:"Drake", album:"Scorpion", year:2018, genre:"Hip-hop", duration:"3:19" },
+    { title:"One Dance", artist:"Drake", feat:"Wizkid & Kyla", album:"Views", year:2016, genre:"Dancehall", duration:"2:54" },
+    { title:"Hotline Bling", artist:"Drake", album:"Views", year:2016, genre:"R&B", duration:"4:27" },
+    { title:"In My Feelings", artist:"Drake", album:"Scorpion", year:2018, genre:"Hip-hop", duration:"3:37" },
+    { title:"Passionfruit", artist:"Drake", album:"More Life", year:2017, genre:"R&B", duration:"4:58" },
+    { title:"Started from the Bottom", artist:"Drake", album:"Nothing Was the Same", year:2013, genre:"Hip-hop", duration:"2:53" },
+    { title:"Hold On, We're Going Home", artist:"Drake", feat:"Majid Jordan", album:"Nothing Was the Same", year:2013, genre:"R&B", duration:"3:47" },
+    // Bruno Mars
+    { title:"Just the Way You Are", artist:"Bruno Mars", album:"Doo-Wops & Hooligans", year:2010, genre:"Pop", duration:"3:40" },
+    { title:"Grenade", artist:"Bruno Mars", album:"Doo-Wops & Hooligans", year:2010, genre:"Pop", duration:"3:42" },
+    { title:"The Lazy Song", artist:"Bruno Mars", album:"Doo-Wops & Hooligans", year:2010, genre:"Pop", duration:"3:15" },
+    { title:"Locked Out of Heaven", artist:"Bruno Mars", album:"Unorthodox Jukebox", year:2012, genre:"Pop", duration:"3:53" },
+    { title:"When I Was Your Man", artist:"Bruno Mars", album:"Unorthodox Jukebox", year:2012, genre:"Pop", duration:"3:33" },
+    { title:"Treasure", artist:"Bruno Mars", album:"Unorthodox Jukebox", year:2012, genre:"Funk", duration:"2:58" },
+    { title:"24K Magic", artist:"Bruno Mars", album:"24K Magic", year:2016, genre:"Funk", duration:"3:46" },
+    { title:"That's What I Like", artist:"Bruno Mars", album:"24K Magic", year:2016, genre:"R&B", duration:"3:26" }
+  ]
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad3 = n => String(n).padStart(3,"0");
+const fmt = s => { if (!isFinite(s)) return "0:00"; s = Math.max(0, Math.floor(s)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+const SONGS = CONFIG.songs.map((s, i) => ({ ...s, i, cat:`${CONFIG.catPrefix}-${pad3(i+1)}` }));
+function hash(str){ let h = 2166136261; for (const c of String(str)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const ICON_PLAY = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1l10 6-10 6z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1h3.5v12H2zM8.5 1H12v12H8.5z" fill="currentColor"/></svg>';
+
+/* =========================================================
+   COVER GENERATOR
+   ========================================================= */
+const STYLES = ["type","circles","stripes","dots","horizon","number","wave","arcs"];
+function coverSVG(style, r){
+  const F = 'fill="currentColor"';
+  switch (style) {
+    case "circles": {
+      const cx = 46 + r()*14, cy = 45 + r()*4; let out = "";
+      for (let rad = 4; rad <= 31; rad += 3.6) out += `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="currentColor" stroke-width="1.1"/>`;
+      return out;
+    }
+    case "stripes": {
+      let y = 18, out = "";
+      while (y < 60) { const h = 1 + r()*6; out += `<rect x="0" y="${y.toFixed(1)}" width="100" height="${h.toFixed(1)}" ${F}/>`; y += h + 2 + r()*4; }
+      return out;
+    }
+    case "dots": {
+      let out = "";
+      for (let x = 0; x < 9; x++) for (let y = 0; y < 6; y++) {
+        const rad = .5 + ((x + y) / 14) * 3.2 * (.6 + r()*.4);
+        out += `<circle cx="${14 + x*9}" cy="${20 + y*8.5}" r="${rad.toFixed(2)}" ${F}/>`;
+      }
+      return out;
+    }
+    case "horizon": {
+      const cy = 50 + r()*8;
+      return `<circle cx="${40 + r()*20}" cy="${cy}" r="${20 + r()*8}" ${F}/>
+        <rect x="0" y="${cy}" width="100" height="${100-cy}" ${F}/>
+        ${[0,1,2,3,4].map(k => `<rect x="0" y="${(cy + 4 + k*k*1.6).toFixed(1)}" width="100" height="${(0.6 + k*.35).toFixed(2)}" style="fill:var(--bg)"/>`).join("")}`;
+    }
+    case "wave": {
+      let out = ""; const n = 26, phase = r()*6;
+      for (let k = 0; k < n; k++) {
+        const h = 6 + Math.abs(Math.sin(k*.55 + phase) * Math.cos(k*.21)) * 40 * (.6 + r()*.4);
+        out += `<rect x="${(8 + k*3.25).toFixed(2)}" y="${(48 - h/2).toFixed(1)}" width="1.8" height="${h.toFixed(1)}" rx=".9" ${F}/>`;
+      }
+      return out;
+    }
+    case "arcs": {
+      let out = ""; const s = 26, ox = 11, oy = 20;
+      for (let x = 0; x < 3; x++) for (let y = 0; y < 2; y++) {
+        const rot = Math.floor(r()*4) * 90, px = ox + x*s, py = oy + y*s;
+        out += `<g transform="rotate(${rot} ${px + s/2} ${py + s/2})"><path d="M${px} ${py + s}A${s} ${s} 0 0 1 ${px + s} ${py}L${px + s} ${py + s}Z" ${F}/></g>`;
+      }
+      return out;
+    }
+    default: return "";
+  }
+}
+function coverHTML(song){
+  const h = hash(song.title + song.artist);
+  const r = rng(h);
+  const style = STYLES[Number.isInteger(song.style) ? song.style % 8 : song.i % 8];
+  const inv = (h % 2) === 1;
+  if (song.cover) {
+    return `<div class="cover has-img"><img src="${esc(song.cover)}" alt="" loading="lazy"></div>`;
+  }
+  let text;
+  if (style === "type") {
+    text = `<span class="cv-artist">${esc(song.artist)}</span><span class="cv-title">${esc(song.title)}</span>`;
+  } else if (style === "number") {
+    text = `<span class="cv-artist">${esc(song.artist)}<br>${esc(song.title)}</span><span class="cv-big">${String(song.year ?? song.i+1).slice(-2)}</span>`;
+  } else {
+    text = `<span class="cv-artist">${esc(song.artist)}</span><span class="cv-title">${esc(song.title)}</span>`;
+  }
+  return `<div class="cover st-${style}${inv ? " inv" : ""}">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${coverSVG(style, r)}</svg>
+    <div class="cover-text">${text}</div>
+  </div>`;
+}
+const sleeveHTML = song => `<div class="sleeve" data-sleeve="${song.i}"><div class="disc"></div>${coverHTML(song)}</div>`;
+
+/* =========================================================
+   STATIC TEXT
+   ========================================================= */
+document.title = CONFIG.name;
+$("#brand").textContent = CONFIG.name;
+$("#headerVol").textContent = CONFIG.volume;
+$("#heroTitle").textContent = CONFIG.name;
+$("#heroLede").textContent = CONFIG.lede;
+const artists = new Set(SONGS.map(s => s.artist));
+const years = SONGS.map(s => +s.year).filter(Boolean);
+$("#stats").innerHTML = [
+  [SONGS.length, "lagu"], [artists.size, "artis"],
+  years.length ? [`${Math.min(...years)}–${String(Math.max(...years)).slice(-2)}`, "rentang rilis"] : null
+].filter(Boolean).map(([n,l]) => `<li><b>${n}</b>${l}</li>`).join("");
+$("#footName").textContent = `${CONFIG.name}, ${CONFIG.volume}`;
+$("#footCount").textContent = `${SONGS.length} lagu dalam katalog`;
+
+const feat = SONGS[CONFIG.featured] || SONGS[0];
+$("#featuredBtn").innerHTML = sleeveHTML(feat);
+$("#featuredBtn").setAttribute("aria-label", `Lihat detail ${feat.title} oleh ${feat.artist}`);
+$("#featuredBtn").addEventListener("click", () => openDetail(feat.i));
+$("#featuredCaption").innerHTML = `<span>Pilihan utama, ${esc(feat.cat)}</span><b>${esc(feat.title)}</b> <span>${esc(feat.artist)}</span>`;
+
+/* =========================================================
+   CATALOG RENDER + FILTER
+   ========================================================= */
+const gridEl = $("#grid"), listEl = $("#list");
+gridEl.innerHTML = SONGS.map(s => `
+  <li class="card" data-i="${s.i}">
+    <button class="card-open" type="button" data-open="${s.i}" aria-label="Lihat detail ${esc(s.title)} oleh ${esc(s.artist)}">${sleeveHTML(s)}</button>
+    <div class="card-meta">
+      <button class="play-btn" type="button" data-play="${s.i}" aria-label="Putar ${esc(s.title)}">${ICON_PLAY}</button>
+      <div>
+        <h3>${esc(s.title)}</h3>
+        <p>${esc(s.artist)}</p>
+        <span class="card-cat">${esc(s.cat)}</span>
+      </div>
+    </div>
+  </li>`).join("");
+
+listEl.innerHTML = `<li class="row row-head" aria-hidden="true"><span>No</span><span></span><span>Judul</span><span class="c-album">Album</span><span class="c-year">Tahun</span><span class="c-genre">Genre</span><span class="dur">Durasi</span><span></span></li>` +
+  SONGS.map(s => `
+  <li class="row" data-i="${s.i}">
+    <span class="num">${s.i+1}</span>
+    <div class="thumb">${coverHTML(s)}</div>
+    <div class="row-title"><button type="button" data-open="${s.i}">${esc(s.title)}</button><span>${esc(s.artist)}${s.feat ? ` feat. ${esc(s.feat)}` : ""}</span></div>
+    <span class="muted c-album">${esc(s.album)}</span>
+    <span class="muted c-year">${esc(s.year)}</span>
+    <span class="muted c-genre">${esc(s.genre)}</span>
+    <span class="dur">${esc(s.duration)}</span>
+    <button class="play-btn" type="button" data-play="${s.i}" aria-label="Putar ${esc(s.title)}">${ICON_PLAY}</button>
+  </li>`).join("");
+
+const FILTER_KEY = CONFIG.filterBy === "genre" ? "genre" : "artist";
+$("#chips").setAttribute("aria-label", FILTER_KEY === "genre" ? "Filter genre" : "Filter artis");
+const groups = ["Semua", ...new Set(SONGS.map(s => s[FILTER_KEY]).filter(Boolean))];
+$("#chips").innerHTML = groups.map((g, k) => `<button class="chip" type="button" data-genre="${esc(g)}" aria-pressed="${k === 0}">${esc(g)}</button>`).join("");
+
+let activeGenre = "Semua", query = "";
+function applyFilter(){
+  const q = query.trim().toLowerCase();
+  let shown = 0;
+  SONGS.forEach(s => {
+    const okG = activeGenre === "Semua" || s[FILTER_KEY] === activeGenre;
+    const okQ = !q || [s.title, s.artist, s.album].join(" ").toLowerCase().includes(q);
+    const ok = okG && okQ; if (ok) shown++;
+    gridEl.querySelector(`.card[data-i="${s.i}"]`).hidden = !ok;
+    listEl.querySelector(`.row[data-i="${s.i}"]`).hidden = !ok;
+  });
+  $("#empty").classList.toggle("show", shown === 0);
+}
+$("#chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  activeGenre = b.dataset.genre;
+  $("#chips").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  applyFilter();
+});
+$("#search").addEventListener("input", e => { query = e.target.value; applyFilter(); });
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => {
+  const list = b.dataset.view === "list";
+  gridEl.hidden = list; listEl.hidden = !list;
+  document.querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+function visibleOrder(){ return SONGS.filter(s => !gridEl.querySelector(`.card[data-i="${s.i}"]`).hidden).map(s => s.i); }
+
+/* =========================================================
+   DETAIL DIALOG
+   ========================================================= */
+const dlg = $("#dlg");
+let dlgIndex = null;
+function openDetail(i){
+  const s = SONGS[i]; dlgIndex = i;
+  $("#dlgCover").innerHTML = sleeveHTML(s);
+  $("#dlgCat").textContent = s.cat;
+  $("#dlgTitle").textContent = s.title;
+  $("#dlgArtist").textContent = s.artist;
+  $("#dlgMeta").innerHTML = [["Featuring", s.feat], ["Album", s.album], ["Tahun", s.year], ["Genre", s.genre], ["Durasi", s.duration]]
+    .filter(([,v]) => v).map(([k,v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("");
+  $("#dlgNote").textContent = s.note || ""; $("#dlgNote").hidden = !s.note;
+  const ytSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(s.artist + " " + s.title)}`;
+  $("#dlgLink").href = s.link || ytSearch;
+  $("#dlgLink").textContent = s.link ? "Dengarkan versi lengkap" : "Cari di YouTube";
+  syncState();
+  dlg.showModal();
+  requestAnimationFrame(() => $("#dlgCover .sleeve").classList.add("is-out"));
+}
+$("#dlgClose").addEventListener("click", () => dlg.close());
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+$("#dlgPlay").addEventListener("click", () => toggle(dlgIndex));
+
+/* =========================================================
+   SYNTH DEMO (dipakai kalau lagu belum punya file audio)
+   ========================================================= */
+const Synth = (() => {
+  let ctx, out, timer = null, step = 0, nextT = 0, startT = 0, song = null;
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  const CH = { m:[0,3,7], M:[0,4,7] };
+  const PROGS = [[[0,"m"],[-4,"M"],[3,"M"],[-2,"M"]],[[-4,"M"],[3,"M"],[-2,"M"],[0,"m"]],[[0,"m"],[5,"m"],[-4,"M"],[-2,"M"]],[[3,"M"],[-2,"M"],[0,"m"],[-4,"M"]]];
+  function ensure(){
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    out = ctx.createGain(); out.gain.value = .8;
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18;
+    out.connect(comp); comp.connect(ctx.destination);
+  }
+  function v(f, t, d, type, vol, cut){
+    const o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+    o.type = type; o.frequency.value = f; fl.type = "lowpass"; fl.frequency.value = cut;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(fl); fl.connect(g); g.connect(out); o.start(t); o.stop(t + d + .05);
+  }
+  function kick(t){ const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(42, t + .14);
+    g.gain.setValueAtTime(.5, t); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(g); g.connect(out); o.start(t); o.stop(t + .32); }
+  function make(i){
+    const r = rng((i + 1) * 977);
+    const pat = Array.from({length:16}, (_, s) => (s % 2 === 0 || r() > .55) ? Math.floor(r()*6) : -1); pat[0] = 0;
+    return { i, prog:PROGS[i % PROGS.length], pat, bpm: 80 + Math.floor(r()*24), wave: r() > .5 ? "triangle" : "square" };
+  }
+  function play(s, t){
+    const bar = Math.floor(s/16), st = s % 16, [ro, q] = song.prog[bar], root = 57 + ro, tones = CH[q], six = 60/song.bpm/4;
+    if (st === 0) tones.forEach(iv => v(mtof(root + iv), t, six*16, "sawtooth", .025, 800));
+    if (st === 0 || st === 8) kick(t);
+    if (st === 0 || st === 7 || st === 10) v(mtof(root - 12 + (st === 10 ? 7 : 0)), t, six*3, "triangle", .2, 600);
+    const p = song.pat[st];
+    if (p >= 0) v(mtof(root + 12 + tones[p % 3] + (p >= 3 ? 12 : 0)), t, six*1.8, song.wave, .05, 1800);
+  }
+  function tick(){ const six = 60/song.bpm/4; while (nextT < ctx.currentTime + .12) { play(step, nextT); nextT += six; step = (step + 1) % 64; } }
+  return {
+    start(i){ ensure(); if (ctx.state === "suspended") ctx.resume();
+      if (!song || song.i !== i) { song = make(i); step = 0; }
+      clearInterval(timer); nextT = ctx.currentTime + .05; startT = nextT - step * (60/song.bpm/4);
+      timer = setInterval(tick, 25); tick(); },
+    stop(){ clearInterval(timer); timer = null; },
+    reset(){ step = 0; song = null; },
+    volume(x){ if (out) out.gain.setTargetAtTime(x * .8, ctx.currentTime, .05); },
+    loopLen(){ return song ? 64 * 60 / song.bpm / 4 : 0; },
+    pos(){ if (!song || !ctx) return 0; const L = this.loopLen(); return ((ctx.currentTime - startT) % L + L) % L; }
+  };
+})();
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+const audio = new Audio();
+audio.preload = "metadata";
+let current = CONFIG.featured || 0, playing = false;
+
+function mode(i){ return SONGS[i].audio ? "file" : "demo"; }
+function load(i){
+  if (i === current && (audio.src || mode(i) === "demo")) return;
+  audio.pause(); Synth.stop(); Synth.reset();
+  current = i;
+  if (mode(i) === "file") { audio.src = SONGS[i].audio; } else { audio.removeAttribute("src"); audio.load(); }
+}
+function play(i = current){
+  load(i);
+  if (mode(current) === "file") { audio.play().catch(() => {}); } else { Synth.start(current); }
+  playing = true; syncState();
+}
+function pause(){ audio.pause(); Synth.stop(); playing = false; syncState(); }
+function toggle(i = current){ (playing && i === current) ? pause() : play(i); }
+function step(dir){
+  const order = visibleOrder(); if (!order.length) return;
+  const k = order.indexOf(current);
+  const next = order[(k + dir + order.length) % order.length];
+  playing ? play(next) : (load(next), syncState());
+}
+audio.addEventListener("ended", () => step(1));
+
+function syncState(){
+  const s = SONGS[current];
+  document.body.classList.toggle("is-playing", playing);
+  $("#playBtn").setAttribute("aria-label", playing ? "Jeda" : "Putar");
+  $("#npThumb").innerHTML = coverHTML(s);
+  $("#npTitle").textContent = s.title;
+  $("#npArtist").textContent = mode(current) === "demo" ? `${s.artist}, nada demo` : s.artist;
+  $("#seek").disabled = mode(current) === "demo";
+
+  document.querySelectorAll("[data-play]").forEach(b => {
+    const i = +b.dataset.play, on = i === current && playing;
+    b.innerHTML = on ? ICON_PAUSE : ICON_PLAY;
+    b.setAttribute("aria-label", `${on ? "Jeda" : "Putar"} ${SONGS[i].title}`);
+    b.closest(".card, .row")?.classList.toggle("is-current", i === current);
+  });
+  document.querySelectorAll("[data-sleeve]").forEach(el => {
+    const on = +el.dataset.sleeve === current && playing;
+    if (!el.closest(".featured") && !el.closest("dialog")) el.classList.toggle("is-out", on);
+    el.classList.toggle("is-spinning", on);
+  });
+  if (dlgIndex !== null) {
+    const on = dlgIndex === current && playing;
+    $("#dlgPlay").innerHTML = `${on ? ICON_PAUSE : ICON_PLAY} ${on ? "Jeda" : "Putar"}`;
+  }
+}
+
+document.addEventListener("click", e => {
+  const p = e.target.closest("[data-play]"); if (p) { toggle(+p.dataset.play); return; }
+  const o = e.target.closest("[data-open]"); if (o) openDetail(+o.dataset.open);
+});
+$("#playBtn").addEventListener("click", () => toggle(current));
+$("#prevBtn").addEventListener("click", () => step(-1));
+$("#nextBtn").addEventListener("click", () => step(1));
+$("#vol").addEventListener("input", e => { const x = e.target.value / 100; audio.volume = x; Synth.volume(x); });
+$("#seek").addEventListener("input", e => { if (audio.duration) audio.currentTime = e.target.value / 1000 * audio.duration; });
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space" || e.target.closest("input, button, a, dialog")) return;
+  e.preventDefault(); toggle(current);
+});
+
+function frame(){
+  let cur = 0, dur = 0;
+  if (mode(current) === "file") { cur = audio.currentTime; dur = audio.duration || 0; }
+  else { cur = Synth.pos(); dur = Synth.loopLen(); }
+  const p = dur ? cur / dur : 0;
+  const seek = $("#seek");
+  if (document.activeElement !== seek) seek.value = Math.round(p * 1000);
+  seek.style.setProperty("--p", (p * 100).toFixed(2) + "%");
+  $("#tCur").textContent = fmt(cur);
+  $("#tDur").textContent = dur ? fmt(dur) : (SONGS[current].duration || "0:00");
+  requestAnimationFrame(frame);
+}
+
+syncState();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
